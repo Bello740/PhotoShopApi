@@ -1,6 +1,7 @@
 const uploadFile = require("../middleware/upload");
 const fs = require("fs");
-const { convertCompilerOptionsFromJson } = require("typescript");
+var Jimp = require("jimp");
+
 const baseUrl = "http://localhost:8080/files/";
 
 const upload = async (req, res) => {
@@ -29,9 +30,9 @@ const upload = async (req, res) => {
   }
 };
 
-const getListFiles = (req, res) => {
+const getListFile = (req, res) => {
   const directoryPath = __basedir + "/resources/static/assets/uploads/";
-
+  const frameUrl = __basedir + "/resources/static/assets/frame.png";
   fs.readdir(directoryPath, function (err, files) {
     if (err) {
       res.status(500).send({
@@ -41,10 +42,40 @@ const getListFiles = (req, res) => {
 
     let fileInfos = [];
 
-    files.forEach((file) => {
-      fileInfos.push({
-        name: file,
-        url: baseUrl + file,
+    let file = files[files.length - 1];
+    fileInfos.push({
+      name: file,
+      url: baseUrl + file,
+    });
+
+    console.log(fileInfos[0].name);
+
+    let url = `${directoryPath}${fileInfos[0].name}`;
+
+    Jimp.read(url, (err, img) => {
+      if (err) {
+        console.log("first err", err);
+        throw err;
+      }
+      Jimp.read(frameUrl, (err, frameImg) => {
+        if (err) {
+          console.log("second err", err);
+          throw err;
+        }
+        if (req.query.action == "composite") {
+          img.composite(frameImg.resize(img.getWidth(), img.getHeight()), 0, 0);
+        } else if (
+          req.query.action == "rotate" &&
+          req.query.direction == "right"
+        ) {
+          img.rotate(-90);
+        } else if (
+          req.query.action == "rotate" &&
+          req.query.direction == "left"
+        ) {
+          img.rotate(90);
+        }
+        img.write(url); // save
       });
     });
 
@@ -67,6 +98,6 @@ const download = (req, res) => {
 
 module.exports = {
   upload,
-  getListFiles,
+  getListFile,
   download,
 };
