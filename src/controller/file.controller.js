@@ -2,12 +2,13 @@ const uploadFile = require("../middleware/upload");
 const fs = require("fs");
 var Jimp = require("jimp");
 
-const baseUrl = "http://localhost:8080/files/";
+const baseUrl = "http://192.168.100.10:8080/file/";
 
 const upload = async (req, res) => {
   try {
-    await uploadFile(req, res);
-    // console.log(req.file);
+    const data = await uploadFile(req, res);
+
+    console.log(req.file);
     if (req.file == undefined) {
       return res.status(400).send({ message: "Please upload a file!" });
     }
@@ -40,53 +41,86 @@ const getListFile = (req, res) => {
       });
     }
 
-    let fileInfos = [];
-
-    let file = files[files.length - 1];
-    fileInfos.push({
-      name: file,
-      url: baseUrl + file,
+    var fileInfos;
+    files.filter((file) => {
+      console.log(file);
+      if (
+        !file &&
+        !req.query.filename &&
+        file != req.query.filename &&
+        (req.query.action != "composite") | "rotate"
+      ) {
+        //handle error
+      } else {
+        fileInfos = {
+          name: file,
+          uri: baseUrl + file,
+        };
+      }
     });
 
-    console.log(fileInfos[0].name);
+    let url = `${directoryPath}${fileInfos.name}`;
 
-    let url = `${directoryPath}${fileInfos[0].name}`;
-
-    Jimp.read(url, (err, img) => {
-      if (err) {
+    let data = Jimp.read(url)
+      .then((img1) => {
+        Jimp.read(frameUrl)
+          .then((img2) => {
+            if (req.query.action == "composite") {
+              img1
+                .resize(img2.getWidth() - 10, img2.getHeight() - 10)
+                .composite(img2, -5, -5);
+            } else if (
+              req.query.action == "rotate" &&
+              req.query.direction == "right"
+            ) {
+              img1.rotate(-90);
+            } else if (
+              req.query.action == "rotate" &&
+              req.query.direction == "left"
+            ) {
+              img1.rotate(90);
+            }
+            img1.write(url);
+            res.status(200).send(fileInfos);
+          })
+          .catch((err) => {
+            console.log("first err", err);
+            throw err;
+          });
+      })
+      .catch((err) => {
         console.log("first err", err);
         throw err;
-      }
-      Jimp.read(frameUrl, (err, frameImg) => {
-        if (err) {
-          console.log("second err", err);
-          throw err;
-        }
-        if (req.query.action == "composite") {
-          img.composite(frameImg.resize(img.getWidth(), img.getHeight()), 0, 0);
-        } else if (
-          req.query.action == "rotate" &&
-          req.query.direction == "right"
-        ) {
-          img.rotate(-90);
-        } else if (
-          req.query.action == "rotate" &&
-          req.query.direction == "left"
-        ) {
-          img.rotate(90);
-        }
-        img.write(url); // save
       });
-    });
 
-    res.status(200).send(fileInfos);
+    // Jimp.read(frameUrl, (err, frameImg) => {
+    //   if (err) {
+    //     console.log("second err", err);
+    //     throw err;
+    //   }
+    //   if (req.query.action == "composite") {
+    //     img
+    //       .resize(frameImg.getWidth() - 10, frameImg.getHeight() - 10)
+    //       .composite(frameImg, -5, -5);
+    //   } else if (
+    //     req.query.action == "rotate" &&
+    //     req.query.direction == "right"
+    //   ) {
+    //     img.rotate(-90);
+    //   } else if (
+    //     req.query.action == "rotate" &&
+    //     req.query.direction == "left"
+    //   ) {
+    //     img.rotate(90);
+    //   }
+    //   img.write(url); // save
+    // });
   });
 };
 
 const download = (req, res) => {
   const fileName = req.params.name;
   const directoryPath = __basedir + "/resources/static/assets/uploads/";
-
   res.download(directoryPath + fileName, fileName, (err) => {
     if (err) {
       res.status(500).send({
