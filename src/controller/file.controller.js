@@ -41,80 +41,51 @@ const getListFile = (req, res) => {
       });
     }
 
-    var fileInfos;
+    let fileInfos;
     files.filter((file) => {
-      console.log(file);
-      if (
-        !file &&
-        !req.query.filename &&
-        file != req.query.filename &&
-        (req.query.action != "composite") | "rotate"
-      ) {
-        //handle error
-      } else {
+      if (file == req.query.filename) {
         fileInfos = {
           name: file,
           uri: baseUrl + file,
         };
-      }
-    });
 
-    let url = `${directoryPath}${fileInfos.name}`;
+        console.log(fileInfos);
 
-    let data = Jimp.read(url)
-      .then((img1) => {
-        Jimp.read(frameUrl)
-          .then((img2) => {
-            if (req.query.action == "composite") {
-              img1
-                .resize(img2.getWidth() - 10, img2.getHeight() - 10)
-                .composite(img2, -5, -5);
-            } else if (
-              req.query.action == "rotate" &&
-              req.query.direction == "right"
-            ) {
-              img1.rotate(-90);
-            } else if (
-              req.query.action == "rotate" &&
-              req.query.direction == "left"
-            ) {
-              img1.rotate(90);
-            }
-            img1.write(url);
-            res.status(200).send(fileInfos);
+        let url = `${directoryPath}${fileInfos.name}`;
+
+        let data = Jimp.read(url)
+          .then((img1) => {
+            Jimp.read(frameUrl)
+              .then((img2) => {
+                if (req.query.action == "composite") {
+                  img1
+                    .resize(img2.getWidth() - 10, img2.getHeight() - 10)
+                    .composite(img2, -5, -5);
+                } else if (
+                  req.query.action == "rotate" &&
+                  req.query.direction == "right"
+                ) {
+                  img1.rotate(-90);
+                } else if (
+                  req.query.action == "rotate" &&
+                  req.query.direction == "left"
+                ) {
+                  img1.rotate(90);
+                }
+                img1.write(url);
+                res.status(200).send(fileInfos);
+              })
+              .catch((err) => {
+                console.log("first err", err);
+                throw err;
+              });
           })
           .catch((err) => {
             console.log("first err", err);
             throw err;
           });
-      })
-      .catch((err) => {
-        console.log("first err", err);
-        throw err;
-      });
-
-    // Jimp.read(frameUrl, (err, frameImg) => {
-    //   if (err) {
-    //     console.log("second err", err);
-    //     throw err;
-    //   }
-    //   if (req.query.action == "composite") {
-    //     img
-    //       .resize(frameImg.getWidth() - 10, frameImg.getHeight() - 10)
-    //       .composite(frameImg, -5, -5);
-    //   } else if (
-    //     req.query.action == "rotate" &&
-    //     req.query.direction == "right"
-    //   ) {
-    //     img.rotate(-90);
-    //   } else if (
-    //     req.query.action == "rotate" &&
-    //     req.query.direction == "left"
-    //   ) {
-    //     img.rotate(90);
-    //   }
-    //   img.write(url); // save
-    // });
+      }
+    });
   });
 };
 
