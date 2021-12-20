@@ -1,12 +1,13 @@
-const uploadFile = require("../middleware/upload");
+import { RequestHandler } from "express";
+import { uploadFileMiddleware } from "../middleware/upload";
 const fs = require("fs");
 var Jimp = require("jimp");
 
 const baseUrl = "http://192.168.100.10:8080/file/";
 
-const upload = async (req, res) => {
+export const upload: RequestHandler = async (req, res) => {
   try {
-    const data = await uploadFile(req, res);
+    const data = await uploadFileMiddleware(req, res);
 
     console.log(req.file);
     if (req.file == undefined) {
@@ -19,30 +20,24 @@ const upload = async (req, res) => {
   } catch (err) {
     console.log(err);
 
-    if (err.code == "LIMIT_FILE_SIZE") {
-      return res.status(500).send({
-        message: "File size cannot be larger than 2MB!",
-      });
-    }
-
     res.status(500).send({
-      message: `Could not upload the file: ${req.file.originalname}. ${err}`,
+      message: "Could not upload the file" + err,
     });
   }
 };
 
-const getListFile = (req, res) => {
-  const directoryPath = __basedir + "/resources/static/assets/uploads/";
-  const frameUrl = __basedir + "/resources/static/assets/frame.png";
-  fs.readdir(directoryPath, function (err, files) {
+export const getListFile: RequestHandler = (req, res) => {
+  const directoryPath = basedir + "/resources/static/assets/uploads/";
+  const frameUrl = basedir + "/resources/static/assets/frame.png";
+  fs.readdir(directoryPath, function (err: any, files: [string]) {
     if (err) {
       res.status(500).send({
         message: "Unable to scan files!",
       });
     }
 
-    let fileInfos;
-    files.filter((file) => {
+    let fileInfos: { name: string; uri: string };
+    files.filter((file: string) => {
       if (file == req.query.filename) {
         fileInfos = {
           name: file,
@@ -59,7 +54,7 @@ const getListFile = (req, res) => {
               .then((img2) => {
                 if (req.query.action == "composite") {
                   img1
-                    .resize(img2.getWidth() - 20, img2.getHeight() - 20)
+                    .resize(img2.getWidth() - 10, img2.getHeight() - 10)
                     .composite(img2, -5, -5);
                 } else if (
                   req.query.action == "rotate" &&
@@ -89,9 +84,9 @@ const getListFile = (req, res) => {
   });
 };
 
-const download = (req, res) => {
+export const download: RequestHandler = (req, res) => {
   const fileName = req.params.name;
-  const directoryPath = __basedir + "/resources/static/assets/uploads/";
+  const directoryPath = basedir + "/resources/static/assets/uploads/";
   res.download(directoryPath + fileName, fileName, (err) => {
     if (err) {
       res.status(500).send({
@@ -99,10 +94,4 @@ const download = (req, res) => {
       });
     }
   });
-};
-
-module.exports = {
-  upload,
-  getListFile,
-  download,
 };
