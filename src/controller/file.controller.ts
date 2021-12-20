@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import { uploadFileMiddleware } from "../middleware/upload";
 const fs = require("fs");
-var Jimp = require("jimp");
+import Jimp from "jimp";
 
 const baseUrl = "http://192.168.100.10:8080/file/";
 
