@@ -1,6 +1,7 @@
-import cors from "cors";
 import express from "express";
 const app = express();
+
+import cors from "cors";
 
 declare global {
   var basedir: string;

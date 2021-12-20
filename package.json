@@ -2,11 +2,11 @@
   "name": "photoshopapi",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "server.ts",
   "scripts": {
     "start": "node .",
     "build": "babel --delete-dir-on-start --out-dir dist --copy-files --ignore \"**/__tests__/**,**/__mocks__/**\" --no-copy-ignored src",
-    "start:dev": "nodemon index.ts",
+    "start:dev": "nodemon server.ts",
     "build:dev": "tsc --watch --preserveWatchOutput",
     "dev": "concurrently \"npm:build:dev\" \"npm:start:dev\""
   },
